@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var secondsInput = ""
     @State private var remainingSeconds: Int? = nil
     @State private var totalSeconds: Int = 0
+    @State private var finished: Bool = false
 
     // 1 Hz でカウントダウン
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -66,9 +67,11 @@ struct ContentView: View {
             guard total > 0 else { return }
             totalSeconds = total
             remainingSeconds = total
+            finished = false
         } else {
             remainingSeconds = nil
             totalSeconds = 0
+            finished = false
         }
     }
 
@@ -77,6 +80,7 @@ struct ContentView: View {
         sec -= 1
         if sec <= 0 {
             remainingSeconds = nil
+            finished = true
             playSound()
         } else {
             remainingSeconds = sec
@@ -106,7 +110,7 @@ struct ContentView: View {
 
     // MARK: - 表示用プロパティ
     private var remainingSecondsLabel: String {
-        guard let sec = remainingSeconds else { return "--:--" }
+        guard let sec = remainingSeconds else { return finished ? "🚨終了🚨\n⚠️FINISH⚠️" : "--:--" }
         return String(format: "%02d:%02d", sec / 60, sec % 60)
     }
 
