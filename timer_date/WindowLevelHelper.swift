@@ -8,10 +8,57 @@
 import Foundation
 import AppKit
 
-/// アプリのメインウィンドウを常に前面に保つ
+/// アプリのメインウィンドウを「他アプリのネイティブ全画面の上にも常駐させる」状態に保つ。
+///
+/// 通常の `.regular` アプリ（Dock にアイコンが出る普通のアプリ）のウィンドウは、
+/// ウィンドウレベルをどれだけ上げても他アプリのネイティブ全画面の上には回り込めない。
+/// アプリを `.accessory`（Dock 非表示の常駐型）にすることで、全画面の上に表示できる。
+@MainActor
+final class FloatingWindowManager {
+    static let shared = FloatingWindowManager()
+    private var timer: Timer?
+    private var didInitialOrderFront = false
+
+    private init() {}
+
+    func start() {
+        // Dock アイコンを消す代わりに、他アプリの全画面の上にも表示できるようにする
+        NSApp.setActivationPolicy(.accessory)
+
+        apply()
+        guard timer == nil else { return }
+        // SwiftUI による設定の上書きに負けないよう、毎秒再適用して維持する
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            MainActor.assumeIsolated {
+                FloatingWindowManager.shared.apply()
+            }
+        }
+    }
+
+    private func apply() {
+        let behavior: NSWindow.CollectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+
+        for window in NSApp.windows {
+            // 全画面アプリの上に回り込めるよう高いレベルにする
+            window.level = .screenSaver
+            // 全 Space に常駐し、全画面アプリ（専用 Space）にも一緒に表示する
+            window.collectionBehavior = behavior
+            // タイトルバーだけでなく背景をドラッグしても移動できるようにする
+            window.isMovableByWindowBackground = true
+        }
+
+        // .accessory だと起動時に自動で前面に来ないことがあるため、初回だけ前面に出す
+        if !didInitialOrderFront, !NSApp.windows.isEmpty {
+            for window in NSApp.windows {
+                window.orderFrontRegardless()
+            }
+            didInitialOrderFront = true
+        }
+    }
+}
+
+/// アプリのメインウィンドウを常に前面・全 Space に保つ。
 @MainActor
 func makeWindowFloating() {
-    if let window = NSApp.windows.first {
-        window.level = .floating
-    }
+    FloatingWindowManager.shared.start()
 }
