@@ -12,7 +12,8 @@ struct TimerDateApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .onAppear { makeWindowFloating() }   // 追加
+                .onAppear { makeWindowFloating() }
         }
+        .windowResizability(.contentSize)
     }
 }

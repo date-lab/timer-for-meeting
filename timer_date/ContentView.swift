@@ -15,22 +15,24 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // 時間入力（分：秒）
-            HStack {
-                TextField("分", text: $minutesInput)
-                    .frame(width: 60)
-                    .textFieldStyle(.roundedBorder)
-                Text("：")
-                TextField("秒", text: $secondsInput)
-                    .frame(width: 60)
-                    .textFieldStyle(.roundedBorder)
+            // 時間入力（分：秒）― タイマー実行中は非表示
+            if remainingSeconds == nil {
+                HStack {
+                    TextField("分", text: $minutesInput)
+                        .frame(width: 60)
+                        .textFieldStyle(.roundedBorder)
+                    Text("：")
+                    TextField("秒", text: $secondsInput)
+                        .frame(width: 60)
+                        .textFieldStyle(.roundedBorder)
+                }
+                .font(.title2.monospacedDigit())
             }
-            .font(.title2.monospacedDigit())
 
             // 円形プログレス
             ZStack {
                 // 背景リング
-                Circle()
+                Circle()  
                     .stroke(Color.gray.opacity(0.3), lineWidth: 12)
 
                 // 残り時間リング（赤）
@@ -40,24 +42,25 @@ struct ContentView: View {
                             style: StrokeStyle(lineWidth: 12, lineCap: .round))
                     .rotationEffect(.degrees(-90)) // 12 時開始
 
-                // 残り時間のテキスト
-                Text(remainingSecondsLabel)
-                    .font(.title.monospacedDigit())
-                    .bold()
+                // 残り時間のテキスト + ボタン
+                VStack(spacing: 8) {
+                    Text(remainingSecondsLabel)
+                        .font(.title.monospacedDigit())
+                        .bold()
+                    Button(action: startTimer) {
+                        Text(remainingSeconds == nil ? "開始" : "リセット")
+                            .font(.body).bold()
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             }
             .frame(width: 160, height: 160)
-
-            // 開始／リセットボタン
-            Button(action: startTimer) {
-                Text(remainingSeconds == nil ? "開始" : "リセット")
-                    .font(.title3).bold()
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .padding(.top, 8)
         }
         .padding(24)
         .onReceive(timer) { _ in tick() }
+        .onChange(of: remainingSeconds) { _, newValue in
+            setWindowCompact(newValue != nil)
+        }
     }
 
     // MARK: - タイマー制御
