@@ -18,6 +18,7 @@ final class FloatingWindowManager {
     static let shared = FloatingWindowManager()
     private var timer: Timer?
     private var didInitialOrderFront = false
+    var isCompact = false
 
     private init() {}
 
@@ -45,6 +46,30 @@ final class FloatingWindowManager {
             window.collectionBehavior = behavior
             // タイトルバーだけでなく背景をドラッグしても移動できるようにする
             window.isMovableByWindowBackground = true
+
+            window.isOpaque = false
+
+            if isCompact {
+                window.backgroundColor = .clear
+                window.styleMask.remove(.titled)
+                window.hasShadow = false
+                if let contentView = window.contentView {
+                    for subview in contentView.subviews where subview is NSVisualEffectView {
+                        subview.isHidden = true
+                    }
+                }
+            } else {
+                window.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.3)
+                if !window.styleMask.contains(.titled) {
+                    window.styleMask.insert(.titled)
+                }
+                window.hasShadow = true
+                if let contentView = window.contentView {
+                    for subview in contentView.subviews where subview is NSVisualEffectView {
+                        subview.isHidden = false
+                    }
+                }
+            }
         }
 
         // .accessory だと起動時に自動で前面に来ないことがあるため、初回だけ前面に出す
@@ -61,4 +86,9 @@ final class FloatingWindowManager {
 @MainActor
 func makeWindowFloating() {
     FloatingWindowManager.shared.start()
+}
+
+@MainActor
+func setWindowCompact(_ compact: Bool) {
+    FloatingWindowManager.shared.isCompact = compact
 }
