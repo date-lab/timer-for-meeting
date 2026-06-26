@@ -59,7 +59,8 @@ final class FloatingWindowManager {
                     }
                 }
             } else {
-                window.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.3)
+                window.isOpaque = true
+                window.backgroundColor = .windowBackgroundColor
                 if !window.styleMask.contains(.titled) {
                     window.styleMask.insert(.titled)
                 }
